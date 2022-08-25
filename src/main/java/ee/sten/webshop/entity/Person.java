@@ -1,4 +1,4 @@
-package ee.sten.webshop;
+package ee.sten.webshop.entity;
 
 import lombok.*;
 
