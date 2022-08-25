@@ -42,10 +42,10 @@ public class OrderController {
     }
 
     @GetMapping("payment-completed")
-    public String checkIfPaid(@PathParam("order_reference") String orderId,
-                              @PathParam("payment_reference") String paymentReference) {
+    public String checkIfPaid(@PathParam("order_reference") String order_reference,
+                              @PathParam("payment_reference") String payment_reference) {
 
-        return "Makse õnnestus";
+        return "Makse õnnestus: " + order_reference + payment_reference;
     }
 
 }
