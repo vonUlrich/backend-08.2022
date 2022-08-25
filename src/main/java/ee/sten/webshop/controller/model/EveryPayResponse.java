@@ -28,7 +28,6 @@ public class EveryPayResponse {
     public Object payment_method;
 
 
-
 }
 
 @Data

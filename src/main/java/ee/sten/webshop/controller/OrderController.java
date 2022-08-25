@@ -9,6 +9,7 @@ import ee.sten.webshop.repository.PersonRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.websocket.server.PathParam;
 import java.util.List;
 
 @RestController
@@ -38,6 +39,13 @@ public class OrderController {
         Order order = orderService.saveOrder(person, originalProducts, totalSum);
 
         return orderService.getLinkFromEveryPay(order);
+    }
+
+    @GetMapping("payment-completed")
+    public String checkIfPaid(@PathParam("order_reference") String orderId,
+                              @PathParam("payment_reference") String paymentReference) {
+
+        return "Makse õnnestus";
     }
 
 }
