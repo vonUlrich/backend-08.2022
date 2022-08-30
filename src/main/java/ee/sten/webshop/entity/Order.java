@@ -8,7 +8,7 @@ import java.util.List;
 
 @Data
 @Entity
-@SequenceGenerator(name="seq", initialValue = 100000, allocationSize = 1) //saab seadistada algkoha id-le, ehk antud juhul algab 100000st
+@SequenceGenerator(name="seq", initialValue = 8800000, allocationSize = 1) //saab seadistada algkoha id-le, ehk antud juhul algab 100000st
 @Table(name = "orders") //vahetame tabeli nime PostgreSQLis
 public class Order {
 
