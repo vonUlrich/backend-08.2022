@@ -17,6 +17,7 @@ public class Order {
     private  Long id;
     private Date creationDate;
     private double totalSum;
+    private String paidState;
     @ManyToMany
     private List<Product> products;
     @ManyToOne

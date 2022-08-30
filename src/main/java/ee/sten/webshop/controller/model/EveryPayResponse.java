@@ -1,6 +1,5 @@
 package ee.sten.webshop.controller.model;
 
-import jdk.nashorn.internal.runtime.regexp.joni.Warnings;
 import lombok.Data;
 
 import java.util.Date;
@@ -43,8 +42,7 @@ class PaymentMethod
 }
 
 
-/*
 @Data
 class Warnings{
 }
-*/
+

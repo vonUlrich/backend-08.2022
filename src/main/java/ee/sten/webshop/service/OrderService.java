@@ -72,6 +72,7 @@ public class OrderService {
         Order order = new Order();
         order.setCreationDate(new Date());
         order.setPerson(person);
+        order.setPaidState("initial");
 
         order.setProducts(originalProducts);
 
@@ -98,7 +99,7 @@ public class OrderService {
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Basic OTJkZGNmYWI5NmUzNGE1Zjo4Y2QxOWU5OWU5YzJjMjA4ZWU1NjNhYmY3ZDBlNGRhZA==");
 
-        HttpEntity entity = new HttpEntity(data, headers);
+        HttpEntity<EveryPayData> entity = new HttpEntity<>(data, headers);
         ResponseEntity<EveryPayResponse> response = restTemplate.exchange(url, HttpMethod.POST, entity, EveryPayResponse.class);
 
         return response.getBody().payment_link;
