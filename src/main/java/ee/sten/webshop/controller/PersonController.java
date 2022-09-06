@@ -3,6 +3,8 @@ package ee.sten.webshop.controller;
 import ee.sten.webshop.entity.Person;
 import ee.sten.webshop.repository.PersonRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,8 +16,8 @@ public class PersonController {
     PersonRepository personRepository;
 
     @GetMapping("persons")
-    private List<Person> getPersons() {
-        return personRepository.findAll();
+    private ResponseEntity<List<Person>> getPersons() {
+        return new ResponseEntity<>(personRepository.findAll(), HttpStatus.OK);
     }
 
  /*   @PostMapping("persons")

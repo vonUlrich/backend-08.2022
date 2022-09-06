@@ -5,6 +5,7 @@ import ee.sten.webshop.controller.model.ParcelMachines;
 import ee.sten.webshop.controller.model.SmartPostParcelMachine;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,7 +22,7 @@ import java.util.stream.Collectors;
 public class ParcelMachineController {
 
     @GetMapping("parcel-machines/{country}")
-    public ParcelMachines getParcelMachines(@PathVariable String country) {
+    public ResponseEntity<ParcelMachines> getParcelMachines(@PathVariable String country) {
 
         RestTemplate restTemplate = new RestTemplate(); //selle kaudu saab http päringuid teha
 
@@ -51,7 +52,7 @@ public class ParcelMachineController {
             parcelMachines.setSmartpost(new ArrayList<>());
         }
 
-        return parcelMachines;
+        return new ResponseEntity<>(parcelMachines, HttpStatus.OK);
     }
 
 /*    @GetMapping("parcel-machines2")

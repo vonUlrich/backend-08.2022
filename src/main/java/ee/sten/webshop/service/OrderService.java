@@ -3,6 +3,7 @@ package ee.sten.webshop.service;
 import ee.sten.webshop.cache.ProductCache;
 import ee.sten.webshop.controller.model.EveryPayData;
 import ee.sten.webshop.controller.model.EveryPayResponse;
+import ee.sten.webshop.controller.model.EveryPayState;
 import ee.sten.webshop.entity.Order;
 import ee.sten.webshop.entity.Person;
 import ee.sten.webshop.entity.Product;
@@ -10,6 +11,8 @@ import ee.sten.webshop.repository.OrderRepository;
 import ee.sten.webshop.repository.PersonRepository;
 import ee.sten.webshop.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -17,12 +20,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -36,9 +36,21 @@ public class OrderService {
     @Autowired
     ProductCache productCache;
 
-    private String apiUsername = "92ddcfab96e34a5f";
-    private String accountName = "EUR3D1";
-    private String customerUrl = "https://sten-webshop.herokuapp.com/payment-completed";
+    @Autowired
+    RestTemplate restTemplate; //lisab resttemplate annotatsiooni, kuna mul automaatne, peab uurima
+
+    @Value("${everypay.username}")
+    private String apiUsername;
+    @Value("${everypay.account}")
+    private String accountName;
+    @Value("${everypay.customerurl}")
+    private String customerUrl;
+    @Value("${everypay.headers}")
+    private String everyPayHeaders;
+
+    @Value("${everypay.url}")
+    private String everyPayUrl;
+
     public List<Product> findOriginalProducts(List<Product> products) {
         //otsi id alusel kõikidele  toodetele originaal foriga:
       /*  List<Product> originalProducts = new ArrayList<>();
@@ -83,8 +95,7 @@ public class OrderService {
     public String getLinkFromEveryPay(Order order) {
 
 
-        RestTemplate restTemplate = new RestTemplate();
-        String url = "https://igw-demo.every-pay.com/api/v4/payments/oneoff";
+        String url = everyPayUrl + "/payments/oneoff";
 
         EveryPayData data = new EveryPayData();
         data.setApi_username(apiUsername);
@@ -97,11 +108,49 @@ public class OrderService {
 
 
         HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Basic OTJkZGNmYWI5NmUzNGE1Zjo4Y2QxOWU5OWU5YzJjMjA4ZWU1NjNhYmY3ZDBlNGRhZA==");
+        headers.set("Authorization", everyPayHeaders);
 
         HttpEntity<EveryPayData> entity = new HttpEntity<>(data, headers);
         ResponseEntity<EveryPayResponse> response = restTemplate.exchange(url, HttpMethod.POST, entity, EveryPayResponse.class);
 
         return response.getBody().payment_link;
     }
+
+    public String checkIfOrderIsPaid(String payment_reference) {
+        ///TODO - teha pärng EveryPaysse nagu tegime makse -> saata kaasa payment ref
+        String url = everyPayUrl + "/payments/" + payment_reference + "?api_username=" + apiUsername;
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", everyPayHeaders);
+        HttpEntity<String> httpEntity = new HttpEntity<>(headers);
+        ResponseEntity<EveryPayState> response = restTemplate.exchange(url, HttpMethod.GET, httpEntity, EveryPayState.class);
+
+        if(response.getBody() != null) {
+            String order_reference = response.getBody().order_reference;
+            Order order = orderRepository.findById(Long.parseLong(order_reference)).get();
+            return getString(payment_reference, response, order_reference, order);
+        } else {
+            return "Ühenduse viga";
+        }
+    }
+
+    private String getString(String payment_reference, ResponseEntity<EveryPayState> response, String order_reference, Order order) {
+        switch (response.getBody().payment_state) {
+            case "settled":
+                order.setPaidState("settled");
+                orderRepository.save(order);
+                return "Makse õnnestus: " + order_reference + payment_reference;
+            case "failed":
+                order.setPaidState("failed");
+                orderRepository.save(order);
+                return "Makse ebaõnnestus: " + order_reference + payment_reference;
+            case "cancelled":
+                order.setPaidState("cancelled");
+                orderRepository.save(order);
+                return "Makse katkestati: " + order_reference + payment_reference;
+            default:
+                return "Makse ei toiminud";
+        }
+    }
 }
+
+//@controllerAdvice

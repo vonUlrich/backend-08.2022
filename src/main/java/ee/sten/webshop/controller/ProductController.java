@@ -4,12 +4,19 @@ import ee.sten.webshop.cache.ProductCache;
 import ee.sten.webshop.entity.Product;
 import ee.sten.webshop.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 @RestController
+@CrossOrigin("http://localhost:3000")
 public class ProductController {
   //  List<Product> products = new ArrayList<>();
 
@@ -20,14 +27,14 @@ public class ProductController {
     ProductCache productCache;
 
     @GetMapping("products")
-        public List<Product> getProducts() {
-            return productRepository.findAll();
+        public ResponseEntity<List<Product>> getProducts() {
+            return new ResponseEntity<>(productRepository.findAll(), HttpStatus.OK);
         }
 
     @GetMapping("get-product/{id}")
-    public Product getProduct(@PathVariable Long id) throws ExecutionException {
+    public ResponseEntity<Product> getProduct(@PathVariable Long id) throws ExecutionException {
         //return productRepository.findById(id).get();
-        return productCache.getProduct(id);
+        return new ResponseEntity<>(productCache.getProduct(id), HttpStatus.OK);
     }
 
 
@@ -42,11 +49,11 @@ public class ProductController {
 
     }*/
     @PostMapping("add-product")
-    public List<Product> addProduct(@RequestBody Product product) {
+    public ResponseEntity<List<Product>> addProduct(@RequestBody Product product) {
       //  if (!productRepository.existsById(product.getId())){
             productRepository.save(product);
     //    }
-        return productRepository.findAll();
+        return new ResponseEntity<>(productRepository.findAll(), HttpStatus.CREATED);
     }
 
   /*  @PutMapping("edit-product/{index}")
@@ -57,13 +64,13 @@ public class ProductController {
     }*/
 
     @PutMapping("edit-product/{index}")
-    public List<Product> editProduct(@RequestBody Product product, @PathVariable int index) {
+    public ResponseEntity<List<Product>> editProduct(@RequestBody Product product, @PathVariable int index) {
       //  products.add(product);
     if (productRepository.existsById(product.getId())){
         productRepository.save(product);
         productCache.emptyCache();
     }
-        return productRepository.findAll();
+        return new ResponseEntity<>(productRepository.findAll(), HttpStatus.OK);
     }
 
     /*@DeleteMapping("delete-product/{index}")
@@ -73,12 +80,69 @@ public class ProductController {
         return products;
     }*/
      @DeleteMapping("delete-product/{id}")
-    public List<Product> deleteProduct(@PathVariable Long id) {
+    public ResponseEntity<List<Product>> deleteProduct(@PathVariable Long id) {
         //  products.add(product);
         productRepository.deleteById(id);
         productCache.emptyCache();
-        return productRepository.findAll();
+        return new ResponseEntity<>(productRepository.findAll(), HttpStatus.OK);
     }
+
+    // lisame igale tootele andmebaasi ka koguse  - entitys
+    //API otspunkti kaudu saab kogusele +1 ja -1 panna
+    //patch - mingi ühe omanduse asendamine
+    @PatchMapping("add-stock")
+    public ResponseEntity<List<Product>> addStock(@RequestBody Product product) {
+         Product originalProduct = productRepository.findById(product.getId()).get();
+         originalProduct.setStock(originalProduct.getStock()+1);
+         productRepository.save(product);
+         return  new ResponseEntity<>(productRepository.findAll(), HttpStatus.OK);
+    }
+
+    @PatchMapping("decrease-stock")
+    public ResponseEntity<List<Product>> decreaseStock(@RequestBody Product product) {
+        Product originalProduct = productRepository.findById(product.getId()).get();
+        if(originalProduct.getStock() > 0) {
+            originalProduct.setStock(originalProduct.getStock()-1);
+            productRepository.save(product);
+        }
+     /*   else {
+            originalProduct.setStock(0);
+            productRepository.save(product);
+        }*/
+
+        return  new ResponseEntity<>(productRepository.findAll(), HttpStatus.OK);
+    }
+
+    @GetMapping("active-products")
+    public ResponseEntity<List<Product>> getAllActiveProducts() {
+        return new ResponseEntity<>(
+                productRepository.findAllByStockGreaterThanAndActiveEqualsOrderByIdAsc(0,true),
+                HttpStatus.OK
+        );
+    }
+
+   /* @GetMapping("active-products/{pagenr}")
+    public ResponseEntity<List<Product>> getActiveProductsPerPage(@PathVariable int pagenr) {
+        PageRequest pageRequest = PageRequest.of(pagenr, 3);
+        return new ResponseEntity<>(
+                productRepository.findAllByStockGreaterThanAndActiveEqualsOrderByIdAsc(0,true, pageRequest),
+                HttpStatus.OK
+        );
+    }*/
+
+    @GetMapping("products-per-page/{pagenr}")
+    public Page<Product> getProducsPerPage(@PathVariable int pagenr) {
+        Pageable pageRequest = PageRequest.of(pagenr, 3);
+        return productRepository.findAll(pageRequest);
+    }
+
+    //-1 kaudu ei lase miinusesse
+
+    //eraldi teha API otspunkti aktiivsete  ja + koguste jaoks
+
+    // Pagination
+
+    // Productis kontrollid, et ei saa ilma nime ja hinnata sisestada
 
 /*    @DeleteMapping("delete-product-id/{id}")
     private List<Product> deleteProductById(@PathVariable Long id) {
