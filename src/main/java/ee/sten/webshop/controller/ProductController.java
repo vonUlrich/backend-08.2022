@@ -121,14 +121,14 @@ public class ProductController {
         );
     }
 
-   /* @GetMapping("active-products/{pagenr}")
+    @GetMapping("active-products/{pagenr}")
     public ResponseEntity<List<Product>> getActiveProductsPerPage(@PathVariable int pagenr) {
         PageRequest pageRequest = PageRequest.of(pagenr, 3);
         return new ResponseEntity<>(
                 productRepository.findAllByStockGreaterThanAndActiveEqualsOrderByIdAsc(0,true, pageRequest),
                 HttpStatus.OK
         );
-    }*/
+    }
 
     @GetMapping("products-per-page/{pagenr}")
     public Page<Product> getProducsPerPage(@PathVariable int pagenr) {
