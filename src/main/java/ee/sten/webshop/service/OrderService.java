@@ -92,7 +92,7 @@ public class OrderService {
         return orderRepository.save(order);
     }
 
-    public String getLinkFromEveryPay(Order order) {
+    public EveryPayResponse getLinkFromEveryPay(Order order) {
 
 
         String url = everyPayUrl + "/payments/oneoff";
@@ -113,7 +113,7 @@ public class OrderService {
         HttpEntity<EveryPayData> entity = new HttpEntity<>(data, headers);
         ResponseEntity<EveryPayResponse> response = restTemplate.exchange(url, HttpMethod.POST, entity, EveryPayResponse.class);
 
-        return response.getBody().payment_link;
+        return response.getBody();
     }
 
     public String checkIfOrderIsPaid(String payment_reference) {

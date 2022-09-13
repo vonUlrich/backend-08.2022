@@ -20,7 +20,7 @@ public class EveryPayResponse {
     public String payment_link;
     public List<PaymentMethod> payment_methods;
     public String api_username;
-    public Warnings warnings;
+    public Object warnings;
     public Object stan;
     public Object fraud_score;
     public String payment_state;

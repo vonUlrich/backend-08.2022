@@ -21,6 +21,7 @@ public class ControllerExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
+
     @ExceptionHandler
     public ResponseEntity<ExceptionResponse> handleError(HttpMessageNotReadableException e) {
         ExceptionResponse response = getExceptionResponse(HttpStatus.BAD_REQUEST, "Body is missing");
@@ -30,6 +31,18 @@ public class ControllerExceptionHandler {
     @ExceptionHandler
     public ResponseEntity<ExceptionResponse> handleError(HttpRequestMethodNotSupportedException e) {
         ExceptionResponse response = getExceptionResponse(HttpStatus.BAD_REQUEST, "Wrong method type");
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<ExceptionResponse> handleError(CategoryInUseException e) {
+        ExceptionResponse response = getExceptionResponse(HttpStatus.BAD_REQUEST, "CATEGORY_IS_IN_USE");
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<ExceptionResponse> handleError(ProductInUseException e) {
+        ExceptionResponse response = getExceptionResponse(HttpStatus.BAD_REQUEST, "PRODUCT_IS_IN_USE");
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 

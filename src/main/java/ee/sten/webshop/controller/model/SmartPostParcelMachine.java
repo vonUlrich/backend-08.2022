@@ -4,17 +4,17 @@ import lombok.Data;
 
 @Data
 public class SmartPostParcelMachine {
-   private int place_id;
-   private String name;
-   private String city;
-   private String address;
-   private String opened;
-   private int group_id;
-   private String group_name;
-   private int group_sort;
-   private String description;
-   private int active;
-   private Object inactive_reason;
-   private String created_date;
-   private String updated_date;
+   public int place_id;
+   public String name;
+   public String city;
+   public String address;
+   public String opened;
+   public int group_id;
+   public String group_name;
+   public int group_sort;
+   public String description;
+   public int active;
+   public Object inactive_reason;
+   public String created_date;
+   public String updated_date;
 }

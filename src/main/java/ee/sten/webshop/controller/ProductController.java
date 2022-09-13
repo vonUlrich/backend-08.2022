@@ -1,9 +1,14 @@
 package ee.sten.webshop.controller;
 
 import ee.sten.webshop.cache.ProductCache;
+import ee.sten.webshop.controller.exceptions.CategoryInUseException;
+import ee.sten.webshop.controller.exceptions.ProductInUseException;
+import ee.sten.webshop.entity.Category;
 import ee.sten.webshop.entity.Product;
+import ee.sten.webshop.repository.CategoryRepository;
 import ee.sten.webshop.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +19,7 @@ import org.springframework.data.domain.Sort;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 @RestController
 @CrossOrigin("http://localhost:3000")
@@ -26,9 +32,12 @@ public class ProductController {
     @Autowired
     ProductCache productCache;
 
+    @Autowired
+    CategoryRepository categoryRepository;
+
     @GetMapping("products")
         public ResponseEntity<List<Product>> getProducts() {
-            return new ResponseEntity<>(productRepository.findAll(), HttpStatus.OK);
+            return new ResponseEntity<>(productRepository.findAllByOrderById(), HttpStatus.OK);
         }
 
     @GetMapping("get-product/{id}")
@@ -53,7 +62,7 @@ public class ProductController {
       //  if (!productRepository.existsById(product.getId())){
             productRepository.save(product);
     //    }
-        return new ResponseEntity<>(productRepository.findAll(), HttpStatus.CREATED);
+        return new ResponseEntity<>(productRepository.findAllByOrderById(), HttpStatus.CREATED);
     }
 
   /*  @PutMapping("edit-product/{index}")
@@ -70,7 +79,7 @@ public class ProductController {
         productRepository.save(product);
         productCache.emptyCache();
     }
-        return new ResponseEntity<>(productRepository.findAll(), HttpStatus.OK);
+        return new ResponseEntity<>(productRepository.findAllByOrderById(), HttpStatus.OK);
     }
 
     /*@DeleteMapping("delete-product/{index}")
@@ -80,38 +89,62 @@ public class ProductController {
         return products;
     }*/
      @DeleteMapping("delete-product/{id}")
-    public ResponseEntity<List<Product>> deleteProduct(@PathVariable Long id) {
+    public ResponseEntity<List<Product>> deleteProduct(@PathVariable Long id) throws ProductInUseException {
         //  products.add(product);
-        productRepository.deleteById(id);
-        productCache.emptyCache();
-        return new ResponseEntity<>(productRepository.findAll(), HttpStatus.OK);
+         try {
+             productRepository.deleteById(id);
+             productCache.emptyCache();
+         } catch (DataIntegrityViolationException e) {
+             throw new ProductInUseException();
+         }
+
+        return new ResponseEntity<>(productRepository.findAllByOrderById(), HttpStatus.OK);
     }
 
     // lisame igale tootele andmebaasi ka koguse  - entitys
     //API otspunkti kaudu saab kogusele +1 ja -1 panna
     //patch - mingi ühe omanduse asendamine
-    @PatchMapping("add-stock")
+   /* @PatchMapping("add-stock")
     public ResponseEntity<List<Product>> addStock(@RequestBody Product product) {
          Product originalProduct = productRepository.findById(product.getId()).get();
          originalProduct.setStock(originalProduct.getStock()+1);
          productRepository.save(product);
+        System.out.println("test --- " + product.getStock() );
          return  new ResponseEntity<>(productRepository.findAll(), HttpStatus.OK);
+
+    }*/
+    @PatchMapping("add-stock")
+    public ResponseEntity<List<Product>> addStock(@RequestBody Product product) {
+        Product originalProduct = productRepository.findById(product.getId()).get();
+        originalProduct.setStock(originalProduct.getStock()+1);
+        productRepository.save(originalProduct);
+        return new ResponseEntity<>(productRepository.findAllByOrderById(), HttpStatus.OK);
     }
 
     @PatchMapping("decrease-stock")
+    public ResponseEntity<List<Product>> decreaseStock(@RequestBody Product product) {
+        Product originalProduct = productRepository.findById(product.getId()).get();
+        if (originalProduct.getStock() > 0) {
+            originalProduct.setStock(originalProduct.getStock()-1);
+            productRepository.save(originalProduct);
+        }
+        return new ResponseEntity<>(productRepository.findAllByOrderById(), HttpStatus.OK);
+    }
+
+  /*  @PatchMapping("decrease-stock")
     public ResponseEntity<List<Product>> decreaseStock(@RequestBody Product product) {
         Product originalProduct = productRepository.findById(product.getId()).get();
         if(originalProduct.getStock() > 0) {
             originalProduct.setStock(originalProduct.getStock()-1);
             productRepository.save(product);
         }
-     /*   else {
+     *//*   else {
             originalProduct.setStock(0);
             productRepository.save(product);
-        }*/
+        }*//*
 
         return  new ResponseEntity<>(productRepository.findAll(), HttpStatus.OK);
-    }
+    }*/
 
     @GetMapping("active-products")
     public ResponseEntity<List<Product>> getAllActiveProducts() {
@@ -134,6 +167,15 @@ public class ProductController {
     public Page<Product> getProducsPerPage(@PathVariable int pagenr) {
         Pageable pageRequest = PageRequest.of(pagenr, 3);
         return productRepository.findAll(pageRequest);
+    }
+
+    @GetMapping("products-by-category/{categoryId}")
+    public List<Long> getProductsPerPage(@PathVariable Long categoryId) {
+        Category category = categoryRepository.findById(categoryId).get();
+        List<Long> ids = productRepository.findAllByCategoryOrderByIdAsc(category).stream()
+                .map(Product::getId)
+                .collect(Collectors.toList());
+        return ids;
     }
 
     //-1 kaudu ei lase miinusesse

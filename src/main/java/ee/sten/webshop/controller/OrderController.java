@@ -1,6 +1,9 @@
 package ee.sten.webshop.controller;
 
+import ee.sten.webshop.controller.model.EveryPayResponse;
 import ee.sten.webshop.controller.model.EveryPayState;
+import ee.sten.webshop.entity.Category;
+import ee.sten.webshop.repository.ProductRepository;
 import ee.sten.webshop.service.OrderService;
 import ee.sten.webshop.entity.Order;
 import ee.sten.webshop.entity.Person;
@@ -14,8 +17,10 @@ import org.springframework.web.client.RestTemplate;
 
 import javax.websocket.server.PathParam;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
+@CrossOrigin("http://localhost:3000")
 public class OrderController {
 
     @Autowired
@@ -25,6 +30,9 @@ public class OrderController {
     @Autowired
     OrderService orderService;
 
+    @Autowired
+    ProductRepository productRepository;
+
     @GetMapping("orders/{personCode}")
     public ResponseEntity<List<Order>> getPersonOrders(@PathVariable String personCode) {
         Person person = personRepository.findById(personCode).get();
@@ -32,7 +40,7 @@ public class OrderController {
     }
 
     @PostMapping("orders/{personCode}")
-    public ResponseEntity<String> addNewOrder(@PathVariable String personCode, @RequestBody List<Product> products) {
+    public ResponseEntity<EveryPayResponse> addNewOrder(@PathVariable String personCode, @RequestBody List<Product> products) {
 
         List<Product> originalProducts = orderService.findOriginalProducts(products);
 
@@ -49,6 +57,15 @@ public class OrderController {
                               @PathParam("payment_reference") String payment_reference) {
 
        return new ResponseEntity<>(orderService.checkIfOrderIsPaid(payment_reference), HttpStatus.OK);
+    }
+
+    @GetMapping("orders-by-product/{productId}")
+    public List<Long> getOrdersByProduct(@PathVariable Long productId) {
+        Product product = productRepository.findById(productId).get();
+        List<Long> ids = orderRepository.findAllByProductsOrderByIdAsc(product).stream()
+                .map(Order::getId)
+                .collect(Collectors.toList());
+        return ids;
     }
 
 }

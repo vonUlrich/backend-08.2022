@@ -7,6 +7,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 
 
 @RestController
+@CrossOrigin("http://localhost:3000")
 public class ParcelMachineController {
 
     @GetMapping("parcel-machines/{country}")
@@ -30,10 +32,10 @@ public class ParcelMachineController {
                 .exchange("https://www.omniva.ee/locations.json",
                         HttpMethod.GET, null, OmnivaParcelMachine[].class );
 
-        ResponseEntity<SmartPostParcelMachine[]> smartPostResponse = restTemplate
-                .exchange("https://www.omniva.ee/locations.json",
-                        HttpMethod.GET, null, SmartPostParcelMachine[].class );
-
+       /* ResponseEntity<SmartPostParcelMachine[]> smartPostResponse = restTemplate
+                .exchange("https://www.smartpost.ee/places.json",
+                        HttpMethod.GET, null,SmartPostParcelMachine[].class);
+*/
         ParcelMachines parcelMachines = new ParcelMachines();
 
         if(omnivaResponse.getBody() != null) {
@@ -46,11 +48,11 @@ public class ParcelMachineController {
             parcelMachines.setOmniva(omnivaParcelMachines);
         }
 
-        if (smartPostResponse.getBody() != null && country.equals("EE")){
-        parcelMachines.setSmartpost(Arrays.asList(smartPostResponse.getBody()));
-        } else {
-            parcelMachines.setSmartpost(new ArrayList<>());
-        }
+//        if (smartPostResponse.getBody() != null && country.equals("EE")){
+//        parcelMachines.setSmartpost(Arrays.asList(smartPostResponse.getBody()));
+//        } else {
+//            parcelMachines.setSmartpost(new ArrayList<>());
+//        }
 
         return new ResponseEntity<>(parcelMachines, HttpStatus.OK);
     }
