@@ -22,7 +22,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 @RestController
-@CrossOrigin("http://localhost:3000")
 public class ProductController {
   //  List<Product> products = new ArrayList<>();
 
