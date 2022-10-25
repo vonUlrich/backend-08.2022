@@ -1,5 +1,6 @@
 package ee.sten.webshop.entity;
 
+import ee.sten.webshop.controller.model.CartProduct;
 import lombok.Data;
 
 import javax.persistence.*;
@@ -18,8 +19,8 @@ public class Order {
     private Date creationDate;
     private double totalSum;
     private String paidState;
-    @ManyToMany
-    private List<Product> products;
+    @OneToMany
+    private List<CartProduct> lineItem;
     @ManyToOne
     private Person person;
 }

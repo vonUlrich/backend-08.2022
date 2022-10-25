@@ -1,8 +1,10 @@
 package ee.sten.webshop.controller;
 
+import ee.sten.webshop.controller.model.CartProduct;
 import ee.sten.webshop.controller.model.EveryPayResponse;
 import ee.sten.webshop.controller.model.EveryPayState;
 import ee.sten.webshop.entity.Category;
+import ee.sten.webshop.repository.CartProductRepository;
 import ee.sten.webshop.repository.ProductRepository;
 import ee.sten.webshop.service.OrderService;
 import ee.sten.webshop.entity.Order;
@@ -31,6 +33,9 @@ public class OrderController {
     OrderService orderService;
 
     @Autowired
+    CartProductRepository cartProductRepository;
+
+    @Autowired
     ProductRepository productRepository;
 
     @GetMapping("orders")
@@ -41,14 +46,14 @@ public class OrderController {
     }
 
     @PostMapping("orders")
-    public ResponseEntity<EveryPayResponse> addNewOrder( @RequestBody List<Product> products) {
+    public ResponseEntity<EveryPayResponse> addNewOrder( @RequestBody List<CartProduct> cartProducts) {
         String personCode = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
-        List<Product> originalProducts = orderService.findOriginalProducts(products);
+        //List<Product> originalProducts = orderService.findOriginalProducts(ids);
 
-        double totalSum = orderService.calculateTotalSum(originalProducts);
+        double totalSum = orderService.calculateTotalSum(cartProducts);
 
         Person person = personRepository.findById(personCode).get();
-        Order order = orderService.saveOrder(person, originalProducts, totalSum);
+        Order order = orderService.saveOrder(person, cartProducts, totalSum);
 
         return new ResponseEntity<>(orderService.getLinkFromEveryPay(order), HttpStatus.OK);
     }
@@ -63,8 +68,8 @@ public class OrderController {
     @GetMapping("orders-by-product/{productId}")
     public List<Long> getOrdersByProduct(@PathVariable Long productId) {
         Product product = productRepository.findById(productId).get();
-        List<Long> ids = orderRepository.findAllByProductsOrderByIdAsc(product).stream()
-                .map(Order::getId)
+        List<Long> ids = cartProductRepository.findAllByProductOrderByIdAsc(product).stream()
+                .map(CartProduct::getId)
                 .collect(Collectors.toList());
         return ids;
     }

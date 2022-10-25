@@ -1,15 +1,18 @@
 package ee.sten.webshop.service;
 
 import ee.sten.webshop.cache.ProductCache;
+import ee.sten.webshop.controller.model.CartProduct;
 import ee.sten.webshop.controller.model.EveryPayData;
 import ee.sten.webshop.controller.model.EveryPayResponse;
 import ee.sten.webshop.controller.model.EveryPayState;
 import ee.sten.webshop.entity.Order;
 import ee.sten.webshop.entity.Person;
 import ee.sten.webshop.entity.Product;
+import ee.sten.webshop.repository.CartProductRepository;
 import ee.sten.webshop.repository.OrderRepository;
 import ee.sten.webshop.repository.PersonRepository;
 import ee.sten.webshop.repository.ProductRepository;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -17,15 +20,18 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import javax.transaction.Transactional;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+@Log4j2
 @Service
 public class OrderService {
 
@@ -35,6 +41,9 @@ public class OrderService {
     ProductRepository productRepository;
     @Autowired
     ProductCache productCache;
+
+    @Autowired
+    CartProductRepository cartProductRepository;
 
     @Autowired
     RestTemplate restTemplate; //lisab resttemplate annotatsiooni, kuna mul automaatne, peab uurima
@@ -51,7 +60,7 @@ public class OrderService {
     @Value("${everypay.url}")
     private String everyPayUrl;
 
-    public List<Product> findOriginalProducts(List<Product> products) {
+    public List<Product> findOriginalProducts(List<Long> products) {
         //otsi id alusel kõikidele  toodetele originaal foriga:
       /*  List<Product> originalProducts = new ArrayList<>();
         for (Product product : products) {
@@ -65,7 +74,7 @@ public class OrderService {
                 //.map(e -> productRepository.findById(e.getId()).get())
                 .map(e -> {
                     try {
-                        return productCache.getProduct(e.getId());
+                        return productCache.getProduct(e);
                     } catch (ExecutionException ex) {
                         throw new RuntimeException(ex);
                     }
@@ -73,20 +82,28 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
-    public double calculateTotalSum(List<Product> originalProducts) {
+    public double calculateTotalSum(List<CartProduct> cartProducts) {
+        String personCode = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
+        log.info("Calculating total sum {}", personCode);
         //products.stream().mapToDouble(e -> e.getPrice());
-        return originalProducts.stream()
-                .mapToDouble(Product::getPrice)
+        return cartProducts.stream()
+                .mapToDouble(e -> e.getProduct().getPrice() * e.getQuantity())
                 .sum();
     }
 
-    public Order saveOrder(Person person, List<Product> originalProducts, double totalSum) {
+    @Transactional
+    public Order saveOrder(Person person, List<CartProduct> cartProducts, double totalSum) {
+
+        String personCode = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
+        log.info("Starting to save order {}", personCode);
+        cartProductRepository.saveAll(cartProducts);
+
         Order order = new Order();
         order.setCreationDate(new Date());
         order.setPerson(person);
         order.setPaidState("initial");
 
-        order.setProducts(originalProducts);
+        order.setLineItem(cartProducts);
 
         order.setTotalSum(totalSum);
         return orderRepository.save(order);

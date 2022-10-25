@@ -7,6 +7,7 @@ import ee.sten.webshop.entity.Category;
 import ee.sten.webshop.entity.Product;
 import ee.sten.webshop.repository.CategoryRepository;
 import ee.sten.webshop.repository.ProductRepository;
+import ee.sten.webshop.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -56,13 +57,16 @@ public class ProductController {
             @PathParam("active") boolean active) {
 
     }*/
-    @PostMapping("add-product")
-    public ResponseEntity<List<Product>> addProduct(@RequestBody Product product) {
-      //  if (!productRepository.existsById(product.getId())){
-            productRepository.save(product);
-    //    }
-        return new ResponseEntity<>(productRepository.findAllByOrderById(), HttpStatus.CREATED);
-    }
+   @PostMapping("add-product")
+   public ResponseEntity<List<Product>> addProduct(@RequestBody Product product) {
+//        products.add(product);
+       // sout
+//        System.out.println(!productRepository.findById(product.getId()).isPresent());
+//        if (!productRepository.existsById(product.getId())) {
+       productRepository.save(product);
+//        }
+       return new ResponseEntity<>(productRepository.findAllByOrderById(), HttpStatus.CREATED);
+   }
 
   /*  @PutMapping("edit-product/{index}")
     private List<Product> editProduct(@RequestBody Product product, @PathVariable int index) {
@@ -193,6 +197,15 @@ public class ProductController {
         }
         return products;
     }*/
+
+    @Autowired
+    OrderService orderService;
+    @GetMapping("cart-products/{ids}")
+    public List<Product> getOriginalProducts(@PathVariable List<Long> ids) {
+        return orderService.findOriginalProducts(ids);
+    }
+
+
 
 }
 
